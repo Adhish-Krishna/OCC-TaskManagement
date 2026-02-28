@@ -67,3 +67,16 @@ jobs:
           context: ./backend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO }}/backend:latest
+
+  trigger-jenkins:
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-push-frontend
+      - build-and-push-backend
+    if: success()
+    steps:
+      - name: Trigger Jenkins Deploy
+        run: |
+          curl -X POST \
+            "${{ secrets.JENKINS_URL }}/job/${{ secrets.JENKINS_JOB }}/build" \
+            --user "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_TOKEN }}"
