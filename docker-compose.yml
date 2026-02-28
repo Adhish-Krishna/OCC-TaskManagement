@@ -6,7 +6,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     environment:
@@ -17,11 +17,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "5000:8000"
     depends_on:
       - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017/deployboard
+      - MONGO_URI=mongodb://mongo:27017/task_database
 
   mongo:
     image: mongo:7
