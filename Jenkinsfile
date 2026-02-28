@@ -36,6 +36,49 @@ pipeline {
                 // Push both tags to DockerHub
                 sh 'docker push ${DOCKER_IMAGE}:${IMAGE_TAG}'
                 sh 'docker push ${DOCKER_IMAGE}:latest'
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        FRONTEND_IMAGE = 'divya080/deployboard-frontend'
+        BACKEND_IMAGE  = 'divya080/deployboard-backend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                dir('frontend') {
+                    script {
+                        dockerImageFrontend = docker.build("${FRONTEND_IMAGE}:${env.BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+
+        stage('Build Backend Image') {
+            steps {
+                dir('backend') {
+                    script {
+                        dockerImageBackend = docker.build("${BACKEND_IMAGE}:${env.BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+
+        stage('Push Images to DockerHub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
+                        dockerImageFrontend.push("${env.BUILD_NUMBER}")
+                        dockerImageFrontend.push('latest')
+                        dockerImageBackend.push("${env.BUILD_NUMBER}")
+                        dockerImageBackend.push('latest')
+                    }
+                }
             }
         }
     }
@@ -44,6 +87,7 @@ pipeline {
         always {
             echo "Cleaning up credentials..."
             sh 'docker logout'
+            cleanWs()
         }
     }
 }
