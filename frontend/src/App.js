@@ -3,12 +3,16 @@ import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-do
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
+import Login from './pages/Login';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    sessionStorage.getItem('deployboard_auth') === 'true'
+  );
 
   const fetchTasks = async () => {
     try {
@@ -20,7 +24,18 @@ function App() {
     }
   };
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    if (isLoggedIn) fetchTasks();
+  }, [isLoggedIn]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('deployboard_auth');
+    setIsLoggedIn(false);
+  };
+
+  if (!isLoggedIn) {
+    return <Login onLogin={() => setIsLoggedIn(true)} />;
+  }
 
   return (
     <Router>
@@ -36,6 +51,7 @@ function App() {
             <NavLink to="/team" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>👥 Team</NavLink>
           </nav>
           <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>🚪 Logout</button>
             <p>DeployBoard</p>
             <span>v1.0.0</span>
           </div>

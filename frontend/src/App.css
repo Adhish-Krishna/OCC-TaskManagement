@@ -507,3 +507,124 @@ nav { flex: 1; }
   color: #3b82f6;
   padding: 4px 0;
 }
+
+/* Login Page */
+.login-container {
+  min-height: 100vh;
+  background: #0a1628;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #0f2044;
+  border: 1px solid #1a3a5c;
+  border-radius: 20px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.login-logo span {
+  font-size: 2.5rem;
+}
+
+.login-logo h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 32px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #0a1628;
+  border: 1px solid #1a3a5c;
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.login-input::placeholder {
+  color: #475569;
+  letter-spacing: 0;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.login-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: transform 0.1s;
+  margin-bottom: 24px;
+}
+
+.login-btn:hover {
+  transform: scale(1.02);
+}
+
+.login-footer {
+  color: #334155;
+  font-size: 0.75rem;
+}
+
+/* Logout Button */
+.logout-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
