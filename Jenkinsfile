@@ -1,92 +1,95 @@
 pipeline {
     agent any
 
-    // Define variables we will use throughout the pipeline
     environment {
-        // IMPORTANT: Replace 'yourdockerhubusername' with your actual DockerHub username!
-        DOCKER_IMAGE = 'udayakanth/task-backend'
+        // We define ghcr.io to pull the images built by GitHub Actions
+        REGISTRY = 'ghcr.io'
         
-        // This automatically tags the image with the Jenkins build number (e.g., v1, v2)
-        IMAGE_TAG = "v${env.BUILD_NUMBER}"
+        // This tells Jenkins which credentials to use to log into GHCR
+        // Make sure 'ghcr-credentials' matches the ID in Jenkins Global Credentials
+        DOCKER_CREDS = credentials('ghcr-credentials')
+
+        // IMPORTANT: Replace 'org/occ-taskmanagement' with your actual lowercased GitHub repository name
+        // E.g., 'udayakanth/occ-taskmanagement'
+        REPO = 'adhish-krishna/occ-taskmanagement'
         
-        // This tells Jenkins which credentials to use to log into DockerHub
-        // You will need to make sure 'dockerhub-credentials' matches the ID in Jenkins
-        DOCKER_CREDS = credentials('dockerhub-credentials')
+        FRONTEND_IMAGE = "${REGISTRY}/${REPO}/frontend:latest"
+        BACKEND_IMAGE = "${REGISTRY}/${REPO}/backend:latest"
     }
 
     stages {
-        stage('Build Backend Image') {
+        stage('Login to GHCR') {
             steps {
-                // Navigate into the backend folder where the Dockerfile lives
-                dir('backend') {
-                    echo "Building Docker image ${DOCKER_IMAGE}:${IMAGE_TAG}..."
-                    // We tag it twice: once with the build number, and once as 'latest'
-                    sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest .'
-                }
-            }
-        }
-
-        stage('Push Backend Image to DockerHub') {
-            steps {
-                echo "Logging into DockerHub..."
+                echo "Logging into GitHub Container Registry..."
                 // Log in securely using the Jenkins credentials
-                sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
+                sh 'echo $DOCKER_CREDS_PSW | docker login ghcr.io -u $DOCKER_CREDS_USR --password-stdin'
+            }
+        }
+
+        stage('Pull Latest Images') {
+            steps {
+                echo "Pulling latest images from GHCR..."
+                sh "docker pull ${FRONTEND_IMAGE}"
+                sh "docker pull ${BACKEND_IMAGE}"
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                echo "Starting new containers..."
                 
-                echo "Pushing images to DockerHub..."
-                // Push both tags to DockerHub
-                sh 'docker push ${DOCKER_IMAGE}:${IMAGE_TAG}'
-                sh 'docker push ${DOCKER_IMAGE}:latest'
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-        FRONTEND_IMAGE = 'divya080/deployboard-frontend'
-        BACKEND_IMAGE  = 'divya080/deployboard-backend'
-    }
+                // Create a custom docker network if it doesn't exist
+                sh "docker network inspect task-net >/dev/null 2>&1 || docker network create task-net"
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+                // 1. Database: MongoDB
+                // Remove old container if it exists
+                sh "docker rm -f occ-mongo || true"
+                sh """
+                docker run -d \\
+                  --name occ-mongo \\
+                  --network task-net \\
+                  -p 27017:27017 \\
+                  -v mongo-data:/data/db \\
+                  mongo:7
+                """
+
+                // 2. Backend API
+                sh "docker rm -f occ-backend || true"
+                sh """
+                docker run -d \\
+                  --name occ-backend \\
+                  --network task-net \\
+                  -p 8000:8000 \\
+                  -e MONGO_URI="mongodb://occ-mongo:27017/task_database" \\
+                  ${BACKEND_IMAGE}
+                """
+
+                // 3. Frontend UI
+                sh "docker rm -f occ-frontend || true"
+                sh """
+                docker run -d \\
+                  --name occ-frontend \\
+                  --network task-net \\
+                  -p 80:80 \\
+                  -e REACT_APP_API_URL=http://occ-backend:8000
+                  ${FRONTEND_IMAGE}
+                """
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Cleanup Unused Images') {
             steps {
-                dir('frontend') {
-                    script {
-                        dockerImageFrontend = docker.build("${FRONTEND_IMAGE}:${env.BUILD_NUMBER}")
-                    }
-                }
-            }
-        }
-
-        stage('Build Backend Image') {
-            steps {
-                dir('backend') {
-                    script {
-                        dockerImageBackend = docker.build("${BACKEND_IMAGE}:${env.BUILD_NUMBER}")
-                    }
-                }
-            }
-        }
-
-        stage('Push Images to DockerHub') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
-                        dockerImageFrontend.push("${env.BUILD_NUMBER}")
-                        dockerImageFrontend.push('latest')
-                        dockerImageBackend.push("${env.BUILD_NUMBER}")
-                        dockerImageBackend.push('latest')
-                    }
-                }
+                echo "Cleaning up dangling images..."
+                // Removes old unused images to save disk space
+                sh "docker image prune -af"
             }
         }
     }
 
     post {
         always {
-            echo "Cleaning up credentials..."
-            sh 'docker logout'
+            echo "Cleaning up local workspace..."
+            sh 'docker logout ghcr.io'
             cleanWs()
         }
     }
