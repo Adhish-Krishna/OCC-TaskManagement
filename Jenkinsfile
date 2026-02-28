@@ -70,7 +70,6 @@ pipeline {
                       --name occ-frontend \\
                       --network task-net \\
                       -p 80:80 \\
-                      -e REACT_APP_API_URL=http://occ-backend:8000 \\
                       ${FRONTEND_IMAGE}
                 """
             }
