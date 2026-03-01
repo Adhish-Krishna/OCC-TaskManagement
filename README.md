@@ -2,6 +2,9 @@
 
 A full-stack task management application developed as a project for a `Deploying Scalable Applications` course. This project demonstrates modern team collaboration practices and a robust DevOps pipeline.
 
+This project is currenlty deployed in AWS T3.small EC2 instance: http://18.60.200.83/
+
+
 ## Team & Contributions
 
 This project was built collaboratively by a team of three members, each focusing on specific areas and utilizing dedicated Git branches:
